@@ -12,13 +12,16 @@ import {
   Calendar,
   Map,
   ArrowRight,
-  Clock,
   PlayCircle,
   FileText,
   Wrench,
   Code2,
 } from "lucide-react";
 import type { GeneratedRoadmap, RoadmapWeek, RoadmapTask } from "@/lib/ai-roadmap";
+import { StatsBar } from "@/components/dashboard/stats-bar";
+import { StreakDisplay } from "@/components/dashboard/streak-display";
+import { TaskCard } from "@/components/dashboard/task-card";
+import { sampleTasks, getLevelFromXP, getXPProgress } from "@/lib/sample-tasks";
 
 const taskTypeIcons = {
   video: PlayCircle,
@@ -36,27 +39,19 @@ const taskTypeColors = {
 
 const userData = {
   name: "Utkarsh",
-  level: 5,
-  xp: 2450,
-  xpToNextLevel: 3000,
   streak: 7,
   tasksCompletedToday: 3,
   totalTasksCompleted: 47,
   projectsDone: 4,
 };
 
-const todayTasks = [
-  { id: 1, title: "Complete React hooks tutorial", completed: true },
-  { id: 2, title: "Build a Todo App component", completed: true },
-  { id: 3, title: "Practice TypeScript generics", completed: true },
-  { id: 4, title: "Read about Next.js App Router", completed: false },
-];
-
-const quickStats = [
-  { label: "Tasks Today", value: "3/4", icon: Target, color: "text-blue-400" },
-  { label: "This Week", value: "21", icon: Calendar, color: "text-emerald-400" },
-  { label: "Streak", value: "7 days", icon: Flame, color: "text-orange-400" },
-  { label: "Projects", value: "4", icon: Trophy, color: "text-purple-400" },
+const completedDates = [
+  new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 6),
+  new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 5),
+  new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 4),
+  new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 3),
+  new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 2),
+  new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 1),
 ];
 
 function CurrentWeekTasks({ roadmap }: { roadmap: GeneratedRoadmap }) {
@@ -125,7 +120,32 @@ function RoadmapPreview({ roadmap }: { roadmap: GeneratedRoadmap }) {
 
 export default function DashboardPage() {
   const [roadmap, setRoadmap] = useState<GeneratedRoadmap | null>(null);
-  const xpProgress = (userData.xp / userData.xpToNextLevel) * 100;
+  const [tasks, setTasks] = useState(sampleTasks);
+
+  const userXP = tasks.reduce((acc, task) => (task.completed ? acc + task.xp : acc), 0);
+  const level = getLevelFromXP(userXP);
+  const xpProgress = getXPProgress(userXP);
+
+  const todayCompleted = tasks.filter((t) => t.completed).length;
+  const todayTasks = sampleTasks.slice(0, 3).map((t) => ({
+    ...t,
+    completed: tasks.find((task) => task.id === t.id)?.completed ?? false,
+  }));
+
+  const quickStats = [
+    { label: "Tasks Today", value: `${todayCompleted}/4`, icon: Target, color: "text-blue-400" },
+    { label: "This Week", value: "21", icon: Calendar, color: "text-emerald-400" },
+    { label: "Streak", value: `${userData.streak} days`, icon: Flame, color: "text-orange-400" },
+    { label: "Projects", value: `${userData.projectsDone}`, icon: Trophy, color: "text-purple-400" },
+  ];
+
+  const handleToggleTask = (taskId: string) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, completed: !task.completed } : task
+      )
+    );
+  };
 
   useEffect(() => {
     async function fetchRoadmap() {
@@ -186,13 +206,13 @@ export default function DashboardPage() {
                   Level Progress
                 </h2>
                 <p className="text-sm text-slate-500">
-                  {userData.xp} / {userData.xpToNextLevel} XP to Level {userData.level + 1}
+                  {xpProgress.current} / {xpProgress.required} XP to Level {level + 1}
                 </p>
               </div>
               <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 rounded-full">
                 <Trophy className="w-4 h-4 text-amber-400" />
                 <span className="text-sm font-medium text-amber-400">
-                  Level {userData.level}
+                  Level {level}
                 </span>
               </div>
             </div>
@@ -200,7 +220,7 @@ export default function DashboardPage() {
             <div className="h-4 bg-slate-800 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${xpProgress}%` }}
+                animate={{ width: `${xpProgress.percentage}%` }}
                 transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
                 className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full relative"
               >
@@ -220,46 +240,23 @@ export default function DashboardPage() {
                 <Target className="w-5 h-5 text-blue-400" />
                 Today&apos;s Tasks
               </h2>
-              <span className="text-sm text-slate-500">
-                {todayTasks.filter((t) => t.completed).length}/{todayTasks.length} done
-              </span>
+              <Link
+                href="/dashboard/tasks"
+                className="text-sm text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
+              >
+                View All
+                <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
 
             <div className="space-y-3">
               {todayTasks.map((task, index) => (
-                <motion.div
+                <TaskCard
                   key={task.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.4 + index * 0.1 }}
-                  className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                    task.completed
-                      ? "bg-emerald-500/10 border border-emerald-500/20"
-                      : "bg-slate-800/50 border border-slate-700/50"
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                      task.completed
-                        ? "bg-emerald-500 text-white"
-                        : "border-2 border-slate-600"
-                    }`}
-                  >
-                    {task.completed && <CheckCircle2 className="w-4 h-4" />}
-                  </div>
-                  <span
-                    className={`flex-1 ${
-                      task.completed ? "text-slate-400 line-through" : "text-white"
-                    }`}
-                  >
-                    {task.title}
-                  </span>
-                  {!task.completed && (
-                    <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded">
-                      In Progress
-                    </span>
-                  )}
-                </motion.div>
+                  task={task}
+                  onToggleComplete={handleToggleTask}
+                  index={index}
+                />
               ))}
             </div>
           </motion.div>
@@ -300,23 +297,18 @@ export default function DashboardPage() {
         </div>
 
         <div className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.4 }}
-            className="p-6 bg-gradient-to-br from-orange-500/10 to-amber-500/10 border border-orange-500/20 rounded-xl"
-          >
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-amber-500 rounded-2xl flex items-center justify-center">
-                <Flame className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-4xl font-bold text-white mb-1">{userData.streak}</div>
-              <div className="text-sm text-slate-400 mb-4">Day Streak!</div>
-              <p className="text-xs text-slate-500">
-                Keep it up! Complete today&apos;s tasks to maintain your streak.
-              </p>
-            </div>
-          </motion.div>
+          <StreakDisplay
+            streak={userData.streak}
+            completedDays={completedDates}
+          />
+
+          <StatsBar
+            level={level}
+            currentXP={xpProgress.current}
+            xpToNextLevel={xpProgress.required}
+            streak={userData.streak}
+            totalXP={userXP}
+          />
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -335,9 +327,13 @@ export default function DashboardPage() {
                   Take Assessment
                 </Link>
               )}
-              <button className="w-full px-4 py-3 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-purple-400 text-sm font-medium transition-colors text-left">
-                Browse Projects
-              </button>
+              <Link
+                href="/dashboard/tasks"
+                className="w-full flex items-center gap-2 px-4 py-3 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-purple-400 text-sm font-medium transition-colors"
+              >
+                <Target className="w-4 h-4" />
+                View Tasks
+              </Link>
               <button className="w-full px-4 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg text-emerald-400 text-sm font-medium transition-colors text-left">
                 Check Job Listings
               </button>

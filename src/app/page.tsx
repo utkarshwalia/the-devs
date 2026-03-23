@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Brain, Target, Zap, Rocket, ChevronRight, Code, Database, Cloud, Cpu } from "lucide-react";
+import { Brain, Target, Zap, Rocket, ChevronRight, Code, Database, Cloud, Cpu, Flame, Trophy, Star } from "lucide-react";
 import Link from "next/link";
 
 const features = [
@@ -225,6 +225,135 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Gamification Section */}
+      <section className="py-20 px-6 bg-slate-900/30">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4">
+              Stay Motivated with{" "}
+              <span className="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
+                Gamification
+              </span>
+            </h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              Earn XP, unlock levels, maintain streaks, and collect achievements. 
+              Learning should be rewarding, not boring.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0 }}
+              className="p-6 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mb-4">
+                <Trophy className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">XP & Levels</h3>
+              <p className="text-slate-400 mb-4">
+                Earn experience points for every task you complete. Level up to unlock new content and achievements.
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 px-3 py-1 bg-amber-500/20 rounded-full">
+                  <Zap className="w-4 h-4 text-amber-400" />
+                  <span className="text-sm font-medium text-amber-400">+50 XP</span>
+                </div>
+                <div className="flex items-center gap-1 px-3 py-1 bg-blue-500/20 rounded-full">
+                  <Trophy className="w-4 h-4 text-blue-400" />
+                  <span className="text-sm font-medium text-blue-400">Level 5</span>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="p-6 bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-2xl"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center mb-4">
+                <Flame className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">Daily Streaks</h3>
+              <p className="text-slate-400 mb-4">
+                Build a learning habit with daily streaks. Miss a day and your streak resets to zero. Stay consistent!
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 px-3 py-1 bg-orange-500/20 rounded-full">
+                  <Flame className="w-4 h-4 text-orange-400" />
+                  <span className="text-sm font-medium text-orange-400">7 Day Streak</span>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-2xl"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-4">
+                <Star className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">Achievements</h3>
+              <p className="text-slate-400 mb-4">
+                Unlock badges and achievements as you reach milestones. Show off your progress to friends and employers.
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center">
+                  <Trophy className="w-4 h-4 text-slate-500" />
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center">
+                  <Star className="w-4 h-4 text-slate-500" />
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/30 to-orange-500/30 border border-amber-500/30 flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-amber-400" />
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="mt-12 p-6 bg-slate-900/50 border border-slate-800 rounded-2xl"
+          >
+            <div className="flex items-center justify-between flex-wrap gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <Zap className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-white">2,450 XP</p>
+                  <p className="text-sm text-slate-400">Average learner earns 500+ XP per week</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-amber-400">12 Days</p>
+                  <p className="text-xs text-slate-500">Longest Streak</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-blue-400">47</p>
+                  <p className="text-xs text-slate-500">Tasks Completed</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-emerald-400">4</p>
+                  <p className="text-xs text-slate-500">Projects Built</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 

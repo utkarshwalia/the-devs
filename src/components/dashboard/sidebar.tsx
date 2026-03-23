@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Map, CheckSquare, FolderOpen, Briefcase, Settings, LogOut, Zap, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Map, CheckSquare, FolderOpen, Briefcase, Settings, LogOut, Zap, ClipboardList, Flame } from "lucide-react";
 import { motion } from "framer-motion";
 import type { GeneratedRoadmap } from "@/lib/ai-roadmap";
+import { getLevelFromXP } from "@/lib/sample-tasks";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -18,6 +19,12 @@ const navItems = [
 const bottomNavItems = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
+
+const currentUser = {
+  name: "Utkarsh",
+  totalXP: 2450,
+  streak: 7,
+};
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -114,17 +121,29 @@ export function Sidebar() {
           })}
         </div>
 
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-800/50">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <span className="text-sm font-medium text-white">U</span>
+        <div className="px-3 py-2 mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center">
+                <Flame className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-medium text-orange-400">{currentUser.streak} day streak</span>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">Utkarsh</p>
-            <p className="text-xs text-slate-500">Level 5 Developer</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <span className="text-sm font-medium text-white">U</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">{currentUser.name}</p>
+                <p className="text-xs text-slate-500">Level {getLevelFromXP(currentUser.totalXP)}</p>
+              </div>
+            </div>
+            <button className="p-1 hover:bg-slate-700 rounded transition-colors">
+              <LogOut className="w-4 h-4 text-slate-500" />
+            </button>
           </div>
-          <button className="p-1 hover:bg-slate-700 rounded transition-colors">
-            <LogOut className="w-4 h-4 text-slate-500" />
-          </button>
         </div>
       </div>
     </aside>
