@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -21,11 +21,14 @@ import {
   Zap,
   ArrowRight,
   ArrowLeft,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { useQuizStore } from "@/store/quiz-store";
 import { QuizProgress } from "@/components/onboarding/quiz-progress";
 import { QuizOption, QuizMultiOption } from "@/components/onboarding/quiz-option";
 import { QuizStep, QuizContainer, QuizTitle, QuizSubtitle, QuizOptions } from "@/components/onboarding/quiz-step";
+import { generateRoadmap } from "@/lib/ai-roadmap";
 
 const steps = [
   { key: "level", title: "What's your current knowledge level?", subtitle: "Be honest - this helps us personalize your roadmap" },
@@ -78,41 +81,42 @@ function LoadingSpinner() {
     >
       <motion.div
         animate={{ rotate: 360 }}
-        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-        className="w-20 h-20 mb-6"
-      >
-        <div className="w-full h-full rounded-full border-4 border-slate-700 border-t-blue-500" />
-      </motion.div>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <h3 className="text-xl font-semibold text-white mb-2">
-          Generating Your Personalized Roadmap
-        </h3>
-        <p className="text-slate-400 text-center max-w-md">
-          Our AI is analyzing your preferences and creating a custom learning path tailored just for you...
-        </p>
-      </motion.div>
-      <motion.div
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full"
+      />
+      <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="mt-8 flex items-center gap-2"
+        transition={{ delay: 0.5 }}
+        className="mt-6 text-slate-400 text-lg"
       >
-        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-        <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-        <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-      </motion.div>
+        Generating your personalized roadmap...
+      </motion.p>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
+        className="mt-2 text-slate-500 text-sm"
+      >
+        This may take a few seconds
+      </motion.p>
     </motion.div>
   );
 }
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { currentStep, answers, isGenerating, setAnswer, nextStep, prevStep, setGenerating } = useQuizStore();
+  const { currentStep, answers, setAnswer, nextStep, prevStep, reset } = useQuizStore();
   const [direction, setDirection] = useState(1);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState("");
+
+  const canProceed = () => {
+    const step = steps[currentStep];
+    if (step.key === "interests") return answers.interests.length > 0;
+    if (step.key === "goals") return answers.goals.length > 0;
+    return !!answers[step.key as keyof typeof answers];
+  };
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -130,237 +134,225 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     setGenerating(true);
+    setError("");
     
     try {
-      const response = await fetch("/api/roadmap/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(answers),
-      });
-
-      if (response.ok) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Generate roadmap client-side (no API call needed)
+      const roadmap = generateRoadmap(
+        answers.level,
+        answers.interests,
+        answers.timeCommitment,
+        answers.goals,
+        answers.learningStyle
+      );
+      
+      // Store in localStorage for the roadmap page to use
+      localStorage.setItem("userRoadmap", JSON.stringify(roadmap));
+      
+      // Redirect to dashboard roadmap
+      setTimeout(() => {
         router.push("/dashboard/roadmap");
-      } else {
-        console.error("Failed to generate roadmap");
-        setGenerating(false);
-      }
-    } catch (error) {
-      console.error("Error generating roadmap:", error);
+      }, 1500);
+    } catch (err) {
+      console.error("Error generating roadmap:", err);
+      setError("Failed to generate roadmap. Please try again.");
       setGenerating(false);
     }
   };
 
-  const canProceed = () => {
-    switch (currentStep) {
-      case 0:
-        return answers.level !== "";
-      case 1:
-        return answers.interests.length > 0;
-      case 2:
-        return answers.timeCommitment !== "";
-      case 3:
-        return answers.goals.length > 0;
-      case 4:
-        return answers.learningStyle !== "";
-      default:
-        return false;
-    }
-  };
-
   const renderStep = () => {
-    if (isGenerating) {
+    const step = steps[currentStep];
+
+    if (generating) {
       return <LoadingSpinner />;
     }
 
-    switch (currentStep) {
-      case 0:
+    switch (step.key) {
+      case "level":
         return (
-          <QuizStep direction={direction}>
-            <QuizTitle>{steps[0].title}</QuizTitle>
-            <QuizSubtitle>{steps[0].subtitle}</QuizSubtitle>
-            <QuizOptions>
-              {levelOptions.map((option) => (
-                <QuizOption
-                  key={option.id}
-                  title={option.title}
-                  description={option.description}
-                  icon={option.icon}
-                  selected={answers.level === option.id}
-                  onClick={() => setAnswer("level", option.id)}
-                />
-              ))}
-            </QuizOptions>
-          </QuizStep>
+          <QuizOptions>
+            {levelOptions.map((option) => (
+              <QuizOption
+                key={option.id}
+                selected={answers.level === option.id}
+                onClick={() => setAnswer("level", option.id)}
+                icon={option.icon}
+                title={option.title}
+                description={option.description}
+              />
+            ))}
+          </QuizOptions>
         );
-      case 1:
+
+      case "interests":
         return (
-          <QuizStep direction={direction}>
-            <QuizTitle>{steps[1].title}</QuizTitle>
-            <QuizSubtitle>{steps[1].subtitle}</QuizSubtitle>
-            <QuizOptions>
-              {interestOptions.map((option) => (
-                <QuizMultiOption
-                  key={option.id}
-                  title={option.title}
-                  description={option.description}
-                  icon={option.icon}
-                  selected={answers.interests.includes(option.id)}
-                  onClick={() => {
-                    const newInterests = answers.interests.includes(option.id)
-                      ? answers.interests.filter((i) => i !== option.id)
-                      : [...answers.interests, option.id];
-                    setAnswer("interests", newInterests);
-                  }}
-                />
-              ))}
-            </QuizOptions>
-          </QuizStep>
+          <QuizOptions>
+            {interestOptions.map((option) => (
+              <QuizMultiOption
+                key={option.id}
+                selected={answers.interests.includes(option.id)}
+                onClick={() => {
+                  const newInterests = answers.interests.includes(option.id)
+                    ? answers.interests.filter((i) => i !== option.id)
+                    : [...answers.interests, option.id];
+                  setAnswer("interests", newInterests);
+                }}
+                icon={option.icon}
+                title={option.title}
+                description={option.description}
+              />
+            ))}
+          </QuizOptions>
         );
-      case 2:
+
+      case "timeCommitment":
         return (
-          <QuizStep direction={direction}>
-            <QuizTitle>{steps[2].title}</QuizTitle>
-            <QuizSubtitle>{steps[2].subtitle}</QuizSubtitle>
-            <QuizOptions>
-              {timeOptions.map((option) => (
-                <QuizOption
-                  key={option.id}
-                  title={option.title}
-                  description={option.description}
-                  icon={option.icon}
-                  selected={answers.timeCommitment === option.id}
-                  onClick={() => setAnswer("timeCommitment", option.id)}
-                />
-              ))}
-            </QuizOptions>
-          </QuizStep>
+          <QuizOptions>
+            {timeOptions.map((option) => (
+              <QuizOption
+                key={option.id}
+                selected={answers.timeCommitment === option.id}
+                onClick={() => setAnswer("timeCommitment", option.id)}
+                icon={option.icon}
+                title={option.title}
+                description={option.description}
+              />
+            ))}
+          </QuizOptions>
         );
-      case 3:
+
+      case "goals":
         return (
-          <QuizStep direction={direction}>
-            <QuizTitle>{steps[3].title}</QuizTitle>
-            <QuizSubtitle>{steps[3].subtitle}</QuizSubtitle>
-            <QuizOptions>
-              {goalOptions.map((option) => (
-                <QuizMultiOption
-                  key={option.id}
-                  title={option.title}
-                  description={option.description}
-                  icon={option.icon}
-                  selected={answers.goals.includes(option.id)}
-                  onClick={() => {
-                    const newGoals = answers.goals.includes(option.id)
-                      ? answers.goals.filter((g) => g !== option.id)
-                      : [...answers.goals, option.id];
-                    setAnswer("goals", newGoals);
-                  }}
-                />
-              ))}
-            </QuizOptions>
-          </QuizStep>
+          <QuizOptions>
+            {goalOptions.map((option) => (
+              <QuizMultiOption
+                key={option.id}
+                selected={answers.goals.includes(option.id)}
+                onClick={() => {
+                  const newGoals = answers.goals.includes(option.id)
+                    ? answers.goals.filter((g) => g !== option.id)
+                    : [...answers.goals, option.id];
+                  setAnswer("goals", newGoals);
+                }}
+                icon={option.icon}
+                title={option.title}
+                description={option.description}
+              />
+            ))}
+          </QuizOptions>
         );
-      case 4:
+
+      case "learningStyle":
         return (
-          <QuizStep direction={direction}>
-            <QuizTitle>{steps[4].title}</QuizTitle>
-            <QuizSubtitle>{steps[4].subtitle}</QuizSubtitle>
-            <QuizOptions>
-              {styleOptions.map((option) => (
-                <QuizOption
-                  key={option.id}
-                  title={option.title}
-                  description={option.description}
-                  icon={option.icon}
-                  selected={answers.learningStyle === option.id}
-                  onClick={() => setAnswer("learningStyle", option.id)}
-                />
-              ))}
-            </QuizOptions>
-          </QuizStep>
+          <QuizOptions>
+            {styleOptions.map((option) => (
+              <QuizOption
+                key={option.id}
+                selected={answers.learningStyle === option.id}
+                onClick={() => setAnswer("learningStyle", option.id)}
+                icon={option.icon}
+                title={option.title}
+                description={option.description}
+              />
+            ))}
+          </QuizOptions>
         );
+
       default:
         return null;
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-2xl"
-      >
-        <div className="text-center mb-8">
+    <div className="min-h-screen bg-slate-950 flex flex-col">
+      {/* Header */}
+      <header className="p-6">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            The Devs
+          </h1>
+        </div>
+      </header>
+
+      {/* Progress */}
+      {!generating && (
+        <div className="px-6">
+          <div className="max-w-4xl mx-auto">
+            <QuizProgress currentStep={currentStep} totalSteps={steps.length} />
+          </div>
+        </div>
+      )}
+
+      {/* Content */}
+      <main className="flex-1 flex items-center justify-center p-6">
+        <div className="max-w-4xl mx-auto w-full">
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 15 }}
-            className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center"
+            key={currentStep}
+            initial={{ opacity: 0, x: direction * 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: direction * -50 }}
+            transition={{ duration: 0.3 }}
           >
-            <Zap className="w-8 h-8 text-white" />
+            <QuizContainer>
+              <QuizTitle>{steps[currentStep].title}</QuizTitle>
+              <QuizSubtitle>{steps[currentStep].subtitle}</QuizSubtitle>
+              
+              {error && (
+                <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg flex items-center gap-2 text-red-400">
+                  <XCircle className="w-5 h-5" />
+                  {error}
+                </div>
+              )}
+
+              {renderStep()}
+            </QuizContainer>
           </motion.div>
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome to The Devs</h1>
-          <p className="text-slate-400">Let&apos;s create your personalized learning roadmap</p>
         </div>
+      </main>
 
-        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 shadow-xl">
-          {!isGenerating && <QuizProgress currentStep={currentStep} totalSteps={steps.length} />}
-          
-          <QuizContainer key={currentStep}>
-            {renderStep()}
-          </QuizContainer>
+      {/* Footer */}
+      {!generating && (
+        <footer className="p-6">
+          <div className="max-w-4xl mx-auto flex justify-between items-center">
+            <button
+              onClick={handleBack}
+              disabled={currentStep === 0}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                currentStep === 0
+                  ? "text-slate-600 cursor-not-allowed"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800"
+              }`}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
 
-          {!isGenerating && (
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-800">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleBack}
-                disabled={currentStep === 0}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  currentStep === 0
-                    ? "text-slate-600 cursor-not-allowed"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800"
-                }`}
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleNext}
-                disabled={!canProceed()}
-                className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-all ${
-                  canProceed()
-                    ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg hover:shadow-blue-500/25"
-                    : "bg-slate-700 text-slate-500 cursor-not-allowed"
-                }`}
-              >
-                {currentStep === steps.length - 1 ? (
-                  <>
-                    Generate Roadmap
-                    <Sparkles className="w-4 h-4" />
-                  </>
-                ) : (
-                  <>
-                    Next
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </motion.button>
-            </div>
-          )}
-        </div>
-
-        <p className="text-center text-slate-500 text-sm mt-6">
-          Takes about 2 minutes • No account required yet
-        </p>
-      </motion.div>
+            <button
+              onClick={handleNext}
+              disabled={!canProceed()}
+              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-all ${
+                canProceed()
+                  ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg hover:shadow-blue-500/25"
+                  : "bg-slate-700 text-slate-500 cursor-not-allowed"
+              }`}
+            >
+              {currentStep === steps.length - 1 ? (
+                <>
+                  Generate Roadmap
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              ) : (
+                <>
+                  Next
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }

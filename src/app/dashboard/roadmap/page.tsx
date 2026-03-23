@@ -195,23 +195,16 @@ export default function RoadmapPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchRoadmap() {
-      try {
-        const response = await fetch("/api/roadmap");
-        const data = await response.json();
-        if (data.roadmap) {
-          setRoadmap(data.roadmap);
-        } else {
-          router.push("/onboarding");
-        }
-      } catch (error) {
-        console.error("Error fetching roadmap:", error);
-        router.push("/onboarding");
-      } finally {
-        setLoading(false);
-      }
+    // Try to load from localStorage first
+    const stored = localStorage.getItem("userRoadmap");
+    if (stored) {
+      setRoadmap(JSON.parse(stored));
+      setLoading(false);
+      return;
     }
-    fetchRoadmap();
+    // If not found, redirect to onboarding
+    router.push("/onboarding");
+    setLoading(false);
   }, [router]);
 
   if (loading) {
