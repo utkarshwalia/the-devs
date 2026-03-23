@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  clerkId       String    @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Profile
+  role          String    @default("student") // student, mentor
+  skills        String[]  @default([])
+  interests     String[]  @default([])
+  specialization String?   // fullstack, ai, devops, datascience
+  
+  // Progress
+  xp            Int       @default(0)
+  level         Int       @default(1)
+  streak        Int       @default(0)
+  
+  // Relations
+  roadmap       Roadmap?
+  tasks         Task[]
+  projects      Project[]
+  submissions   Submission[]
+}
+
+model Roadmap {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+  
+  specialization String
+  phases        Json      // Array of phases with weeks
+  resources     Json      // Array of resources
+  generatedAt   DateTime  @default(now())
+  
+  tasks         Task[]
+}
+
+model Task {
+  id            String    @id @default(cuid())
+  roadmapId     String
+  roadmap       Roadmap   @relation(fields: [roadmapId], references: [id])
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  title         String
+  description   String?
+  dayNumber     Int
+  weekNumber    Int
+  phase         String    // beginner, intermediate, advanced
+  
+  completed     Boolean   @default(false)
+  completedAt   DateTime?
+  
+  createdAt     DateTime  @default(now())
+}
+
+model Project {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  title         String
+  description   String
+  category      String    // web, mobile, ai, devops, datascience
+  difficulty    String    // beginner, intermediate, advanced
+  
+  problemStatement String
+  guidance      Json      // Step-by-step guidance
+  
+  githubUrl     String?
+  liveUrl       String?
+  
+  submissions   Submission[]
+  
+  createdAt     DateTime  @default(now())
+}
+
+model Submission {
+  id            String    @id @default(cuid())
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id])
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  code          String?
+  notes         String?
+  
+  xpEarned     Int       @default(0)
+  
+  createdAt     DateTime  @default(now())
+}
+
+model Job {
+  id            String    @id @default(cuid())
+  
+  title         String
+  company       String
+  location      String?
+  type          String    // fulltime, internship, contract
+  experience    String    // entry, mid, senior
+  
+  skills        String[]
+  description   String?
+  applyUrl      String
+  
+  postedAt      DateTime?
+}
+
+model Resume {
+  id            String    @id @default(cuid())
+  userId        String
+  
+  personalInfo  Json
+  summary       String?
+  experience    Json      @default("[]")
+  education     Json      @default("[]")
+  skills        Json      @default("[]")
+  projects      Json      @default("[]")
+  
+  generatedContent String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}

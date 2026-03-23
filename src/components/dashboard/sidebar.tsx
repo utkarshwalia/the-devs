@@ -1,0 +1,104 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { LayoutDashboard, Map, CheckSquare, FolderOpen, Briefcase, Settings, LogOut, Zap } from "lucide-react";
+import { motion } from "framer-motion";
+
+const navItems = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/roadmap", label: "Roadmap", icon: Map },
+  { href: "/dashboard/tasks", label: "Tasks", icon: CheckSquare },
+  { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
+  { href: "/dashboard/career", label: "Career", icon: Briefcase },
+];
+
+const bottomNavItems = [
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+];
+
+export function Sidebar() {
+  const pathname = usePathname();
+
+  return (
+    <aside className="fixed left-0 top-0 bottom-0 w-64 bg-slate-900/50 border-r border-slate-800/50 flex flex-col">
+      {/* Logo */}
+      <div className="p-6">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+            <Zap className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            The Devs
+          </span>
+        </Link>
+      </div>
+
+      {/* Main Navigation */}
+      <nav className="flex-1 px-3">
+        <div className="space-y-1">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                  isActive
+                    ? "bg-blue-500/10 text-blue-400"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="font-medium">{item.label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeNav"
+                    className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full"
+                  />
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* Bottom Navigation */}
+      <div className="p-3 border-t border-slate-800/50">
+        <div className="space-y-1 mb-4">
+          {bottomNavItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                  isActive
+                    ? "bg-blue-500/10 text-blue-400"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+        
+        {/* User Profile Placeholder */}
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-800/50">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+            <span className="text-sm font-medium text-white">U</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white truncate">Utkarsh</p>
+            <p className="text-xs text-slate-500">Level 5 Developer</p>
+          </div>
+          <button className="p-1 hover:bg-slate-700 rounded transition-colors">
+            <LogOut className="w-4 h-4 text-slate-500" />
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+}
