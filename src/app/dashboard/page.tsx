@@ -1,9 +1,39 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { Flame, Zap, Trophy, Target, CheckCircle2, Calendar } from "lucide-react";
+import {
+  Flame,
+  Zap,
+  Trophy,
+  Target,
+  CheckCircle2,
+  Calendar,
+  Map,
+  ArrowRight,
+  Clock,
+  PlayCircle,
+  FileText,
+  Wrench,
+  Code2,
+} from "lucide-react";
+import type { GeneratedRoadmap, RoadmapWeek, RoadmapTask } from "@/lib/ai-roadmap";
 
-// Mock user data - would come from auth/database in production
+const taskTypeIcons = {
+  video: PlayCircle,
+  article: FileText,
+  practice: Wrench,
+  project: Code2,
+};
+
+const taskTypeColors = {
+  video: "text-blue-400",
+  article: "text-purple-400",
+  practice: "text-amber-400",
+  project: "text-emerald-400",
+};
+
 const userData = {
   name: "Utkarsh",
   level: 5,
@@ -29,12 +59,91 @@ const quickStats = [
   { label: "Projects", value: "4", icon: Trophy, color: "text-purple-400" },
 ];
 
+function CurrentWeekTasks({ roadmap }: { roadmap: GeneratedRoadmap }) {
+  const currentWeekIndex = 0;
+  const currentPhase = roadmap.phases[0];
+  const currentWeek: RoadmapWeek | undefined = currentPhase?.weeks[currentWeekIndex];
+
+  if (!currentWeek) return null;
+
+  return (
+    <div className="space-y-3">
+      {currentWeek.tasks.slice(0, 3).map((task, idx) => {
+        const Icon = taskTypeIcons[task.type];
+        return (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: 0.5 + idx * 0.1 }}
+            className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50"
+          >
+            <Icon className={`w-5 h-5 ${taskTypeColors[task.type]}`} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-white truncate">{task.title}</p>
+              <p className="text-xs text-slate-500">{task.duration}</p>
+            </div>
+            <div className="flex items-center gap-1 text-amber-400">
+              <Zap className="w-3 h-3" />
+              <span className="text-xs">{task.xp} XP</span>
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RoadmapPreview({ roadmap }: { roadmap: GeneratedRoadmap }) {
+  const totalWeeks = roadmap.phases.reduce((acc, p) => acc + p.weeks.length, 0);
+  const totalXP = roadmap.phases.reduce(
+    (acc, p) => acc + p.weeks.reduce((wAcc, w) => wAcc + w.tasks.reduce((tAcc, t) => tAcc + t.xp, 0), 0),
+    0
+  );
+  const totalProjects = roadmap.phases.reduce(
+    (acc, p) => acc + p.weeks.filter((w) => w.project).length,
+    0
+  );
+
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      <div className="p-4 bg-slate-800/30 rounded-lg border border-slate-700/50">
+        <p className="text-2xl font-bold text-white">{totalWeeks}</p>
+        <p className="text-xs text-slate-500">Weeks</p>
+      </div>
+      <div className="p-4 bg-slate-800/30 rounded-lg border border-slate-700/50">
+        <p className="text-2xl font-bold text-amber-400">{totalXP}</p>
+        <p className="text-xs text-slate-500">Total XP</p>
+      </div>
+      <div className="p-4 bg-slate-800/30 rounded-lg border border-slate-700/50">
+        <p className="text-2xl font-bold text-emerald-400">{totalProjects}</p>
+        <p className="text-xs text-slate-500">Projects</p>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
+  const [roadmap, setRoadmap] = useState<GeneratedRoadmap | null>(null);
   const xpProgress = (userData.xp / userData.xpToNextLevel) * 100;
+
+  useEffect(() => {
+    async function fetchRoadmap() {
+      try {
+        const response = await fetch("/api/roadmap");
+        const data = await response.json();
+        if (data.roadmap) {
+          setRoadmap(data.roadmap);
+        }
+      } catch (error) {
+        console.error("Error fetching roadmap:", error);
+      }
+    }
+    fetchRoadmap();
+  }, []);
 
   return (
     <div className="max-w-6xl">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">
           Welcome back, {userData.name}! 👋
@@ -44,7 +153,6 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-4 gap-4 mb-8">
         {quickStats.map((stat, index) => (
           <motion.div
@@ -63,11 +171,8 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Main Content Grid */}
       <div className="grid grid-cols-3 gap-6">
-        {/* Left Column - XP & Progress */}
         <div className="col-span-2 space-y-6">
-          {/* XP Progress Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -91,8 +196,7 @@ export default function DashboardPage() {
                 </span>
               </div>
             </div>
-            
-            {/* Progress Bar */}
+
             <div className="h-4 bg-slate-800 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
@@ -105,7 +209,6 @@ export default function DashboardPage() {
             </div>
           </motion.div>
 
-          {/* Today's Tasks */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -118,7 +221,7 @@ export default function DashboardPage() {
                 Today&apos;s Tasks
               </h2>
               <span className="text-sm text-slate-500">
-                {todayTasks.filter(t => t.completed).length}/{todayTasks.length} done
+                {todayTasks.filter((t) => t.completed).length}/{todayTasks.length} done
               </span>
             </div>
 
@@ -135,16 +238,20 @@ export default function DashboardPage() {
                       : "bg-slate-800/50 border border-slate-700/50"
                   }`}
                 >
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                    task.completed
-                      ? "bg-emerald-500 text-white"
-                      : "border-2 border-slate-600"
-                  }`}>
+                  <div
+                    className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                      task.completed
+                        ? "bg-emerald-500 text-white"
+                        : "border-2 border-slate-600"
+                    }`}
+                  >
                     {task.completed && <CheckCircle2 className="w-4 h-4" />}
                   </div>
-                  <span className={`flex-1 ${
-                    task.completed ? "text-slate-400 line-through" : "text-white"
-                  }`}>
+                  <span
+                    className={`flex-1 ${
+                      task.completed ? "text-slate-400 line-through" : "text-white"
+                    }`}
+                  >
                     {task.title}
                   </span>
                   {!task.completed && (
@@ -156,11 +263,43 @@ export default function DashboardPage() {
               ))}
             </div>
           </motion.div>
+
+          {roadmap && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.35 }}
+              className="p-6 bg-slate-900/50 border border-slate-800 rounded-xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Map className="w-5 h-5 text-purple-400" />
+                  Your Roadmap
+                </h2>
+                <Link
+                  href="/dashboard/roadmap"
+                  className="flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  View Full Roadmap
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+
+              <p className="text-slate-400 text-sm mb-4">
+                {roadmap.specialization.name} • {roadmap.totalDuration}
+              </p>
+
+              <RoadmapPreview roadmap={roadmap} />
+
+              <div className="mt-4 pt-4 border-t border-slate-800">
+                <p className="text-xs text-slate-500 mb-2">This Week&apos;s Focus</p>
+                <CurrentWeekTasks roadmap={roadmap} />
+              </div>
+            </motion.div>
+          )}
         </div>
 
-        {/* Right Column - Streak & Quick Actions */}
         <div className="space-y-6">
-          {/* Streak Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -171,9 +310,7 @@ export default function DashboardPage() {
               <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-amber-500 rounded-2xl flex items-center justify-center">
                 <Flame className="w-8 h-8 text-white" />
               </div>
-              <div className="text-4xl font-bold text-white mb-1">
-                {userData.streak}
-              </div>
+              <div className="text-4xl font-bold text-white mb-1">{userData.streak}</div>
               <div className="text-sm text-slate-400 mb-4">Day Streak!</div>
               <p className="text-xs text-slate-500">
                 Keep it up! Complete today&apos;s tasks to maintain your streak.
@@ -181,7 +318,6 @@ export default function DashboardPage() {
             </div>
           </motion.div>
 
-          {/* Quick Actions */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -190,9 +326,15 @@ export default function DashboardPage() {
           >
             <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
             <div className="space-y-2">
-              <button className="w-full px-4 py-3 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg text-blue-400 text-sm font-medium transition-colors text-left">
-                Generate New Roadmap
-              </button>
+              {!roadmap && (
+                <Link
+                  href="/onboarding"
+                  className="w-full flex items-center gap-2 px-4 py-3 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg text-blue-400 text-sm font-medium transition-colors"
+                >
+                  <Map className="w-4 h-4" />
+                  Take Assessment
+                </Link>
+              )}
               <button className="w-full px-4 py-3 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-purple-400 text-sm font-medium transition-colors text-left">
                 Browse Projects
               </button>
@@ -202,7 +344,6 @@ export default function DashboardPage() {
             </div>
           </motion.div>
 
-          {/* Achievement Preview */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

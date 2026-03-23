@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Map, CheckSquare, FolderOpen, Briefcase, Settings, LogOut, Zap } from "lucide-react";
+import { useState, useEffect } from "react";
+import { LayoutDashboard, Map, CheckSquare, FolderOpen, Briefcase, Settings, LogOut, Zap, ClipboardList } from "lucide-react";
 import { motion } from "framer-motion";
+import type { GeneratedRoadmap } from "@/lib/ai-roadmap";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -19,10 +21,23 @@ const bottomNavItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [hasRoadmap, setHasRoadmap] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    async function checkRoadmap() {
+      try {
+        const response = await fetch("/api/roadmap");
+        const data = await response.json();
+        setHasRoadmap(!!data.roadmap);
+      } catch {
+        setHasRoadmap(false);
+      }
+    }
+    checkRoadmap();
+  }, []);
 
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-64 bg-slate-900/50 border-r border-slate-800/50 flex flex-col">
-      {/* Logo */}
       <div className="p-6">
         <Link href="/dashboard" className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
@@ -34,7 +49,6 @@ export function Sidebar() {
         </Link>
       </div>
 
-      {/* Main Navigation */}
       <nav className="flex-1 px-3">
         <div className="space-y-1">
           {navItems.map((item) => {
@@ -61,9 +75,24 @@ export function Sidebar() {
             );
           })}
         </div>
+
+        {hasRoadmap === false && (
+          <div className="mt-4 pt-4 border-t border-slate-800">
+            <Link
+              href="/onboarding"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                pathname === "/onboarding"
+                  ? "bg-blue-500/10 text-blue-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+              }`}
+            >
+              <ClipboardList className="w-5 h-5" />
+              <span className="font-medium">Take Assessment</span>
+            </Link>
+          </div>
+        )}
       </nav>
 
-      {/* Bottom Navigation */}
       <div className="p-3 border-t border-slate-800/50">
         <div className="space-y-1 mb-4">
           {bottomNavItems.map((item) => {
@@ -84,8 +113,7 @@ export function Sidebar() {
             );
           })}
         </div>
-        
-        {/* User Profile Placeholder */}
+
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-800/50">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
             <span className="text-sm font-medium text-white">U</span>
