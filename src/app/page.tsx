@@ -54,13 +54,13 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-4">
             <Link
-              href="/sign-in"
+              href="/onboarding"
               className="px-4 py-2 text-sm text-slate-300 hover:text-white transition-colors"
             >
               Sign In
             </Link>
             <Link
-              href="/sign-up"
+              href="/onboarding"
               className="px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg font-medium hover:opacity-90 transition-opacity"
             >
               Get Started
@@ -120,7 +120,7 @@ export default function Home() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link
-              href="/sign-up"
+              href="/onboarding"
               className="group px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl font-semibold text-lg flex items-center gap-2 hover:shadow-lg hover:shadow-blue-500/25 transition-all"
             >
               Start Your Journey
@@ -380,7 +380,7 @@ export default function Home() {
                 with structured, AI-powered learning.
               </p>
               <Link
-                href="/sign-up"
+                href="/onboarding"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl font-semibold text-lg hover:shadow-lg hover:shadow-blue-500/25 transition-all"
               >
                 Create Free Account
